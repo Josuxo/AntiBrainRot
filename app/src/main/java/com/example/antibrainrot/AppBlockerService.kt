@@ -16,7 +16,7 @@ class AppBlockerService : AccessibilityService() {
 
     private lateinit var prefs: PreferencesManager
 
-    private var lastInterceptedPackage: String? = null
+    private var lastForegroundPackage: String? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var timerJob: Job? = null
@@ -34,6 +34,9 @@ class AppBlockerService : AccessibilityService() {
 
         val packageName = event.packageName?.toString() ?: return
 
+        val prevForeground = lastForegroundPackage
+        lastForegroundPackage = packageName
+
         val monitored = prefs.getMonitoredPackages()
 
         if (monitored.contains(packageName)) {
@@ -44,20 +47,16 @@ class AppBlockerService : AccessibilityService() {
             if (prefs.getSessionState(packageName) == SessionState.USING ||
                 prefs.getSessionState(packageName) == SessionState.CONFIRM
             ) {
-                lastInterceptedPackage = packageName
                 return
             }
 
             if (prefs.isAppApproved(packageName)) {
-                lastInterceptedPackage = packageName
                 return
             }
-            if (packageName != lastInterceptedPackage) {
-                lastInterceptedPackage = packageName
+
+            if (prevForeground != packageName) {
                 launchIntervention(packageName)
             }
-        } else {
-            lastInterceptedPackage = null
         }
     }
 
@@ -97,7 +96,7 @@ class AppBlockerService : AccessibilityService() {
             if (prefs.getSessionState(packageName) != SessionState.USING) continue
             val deadline = prefs.getSessionDeadline(packageName)
             if (deadline > 0 && now >= deadline) {
-                if (lastInterceptedPackage == packageName) {
+                if (lastForegroundPackage == packageName) {
                     prefs.setSessionState(packageName, SessionState.CONFIRM)
                     launchConfirm(packageName)
                 } else {
