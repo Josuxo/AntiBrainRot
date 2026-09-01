@@ -145,7 +145,7 @@ fun InterventionScreen(targetPackage: String?, durationSeconds: Int) {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("soy debil")
+                Text("Entrar igual")
             }
             Spacer(modifier = Modifier.height(16.dp))
         }

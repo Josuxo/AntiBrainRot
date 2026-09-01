@@ -2,6 +2,8 @@ package com.example.antibrainrot
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.content.Intent.ACTION_MAIN
+import android.content.Intent.CATEGORY_HOME
 import android.view.accessibility.AccessibilityEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +19,18 @@ class AppBlockerService : AccessibilityService() {
     private lateinit var prefs: PreferencesManager
 
     private var lastForegroundPackage: String? = null
+
+    private val homeLauncherPackage: String? by lazy {
+        val intent = Intent(ACTION_MAIN).addCategory(CATEGORY_HOME)
+        packageManager.resolveActivity(intent, 0)?.activityInfo?.packageName
+    }
+
+    private fun shouldTrackForeground(packageName: String): Boolean {
+        if (packageManager.getLaunchIntentForPackage(packageName) != null) return true
+        if (packageName == homeLauncherPackage) return true
+        if (packageName == this.packageName) return true
+        return false
+    }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var timerJob: Job? = null
@@ -35,7 +49,9 @@ class AppBlockerService : AccessibilityService() {
         val packageName = event.packageName?.toString() ?: return
 
         val prevForeground = lastForegroundPackage
-        lastForegroundPackage = packageName
+        if (shouldTrackForeground(packageName)) {
+            lastForegroundPackage = packageName
+        }
 
         val monitored = prefs.getMonitoredPackages()
 

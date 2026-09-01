@@ -447,7 +447,7 @@ fun AppConfigScreen(
             Text("Dejar desbloqueada tras continuar", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Después de tocar \u201csoy debil\u201d, esta aplicación permanece desbloqueada " +
+                text = "Después de tocar \u201cEntrar igual\u201d, esta aplicación permanece desbloqueada " +
                     "durante este tiempo antes de poder ser interceptada de nuevo.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
