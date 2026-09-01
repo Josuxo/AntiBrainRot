@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AntiBrainRot</string>
+    <string name="accessibility_service_description">Supervisa el lanzamiento de aplicaciones para mostrar una pantalla de intervención antes de abrir aplicaciones distractoras.</string>
+</resources>
