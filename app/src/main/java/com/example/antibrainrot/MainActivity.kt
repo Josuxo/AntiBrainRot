@@ -444,11 +444,12 @@ fun AppConfigScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Text("Dejar desbloqueada tras continuar", style = MaterialTheme.typography.titleLarge)
+            Text("Tiempo de gracia", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Después de tocar \u201cEntrar igual\u201d, esta aplicación permanece desbloqueada " +
-                    "durante este tiempo antes de poder ser interceptada de nuevo.",
+                text = "Después de salir de la aplicación, puedes volver a entrar libremente durante este tiempo " +
+                    "antes de volver a pasar por la intervención. " +
+                    "Si el temporizador está activo, el contador de la sesión se pausa mientras estás fuera.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

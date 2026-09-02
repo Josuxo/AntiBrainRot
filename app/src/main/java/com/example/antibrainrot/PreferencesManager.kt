@@ -45,17 +45,28 @@ class PreferencesManager private constructor(context: Context) {
             .apply()
     }
 
-    fun setAppApproved(packageName: String) {
+    fun approveAppEntry(packageName: String) {
         prefs.edit()
-            .putLong(approvalKey(packageName), System.currentTimeMillis())
+            .putLong(
+                approvalKey(packageName),
+                System.currentTimeMillis() + ENTRY_APPROVAL_SECONDS * 1000L
+            )
+            .apply()
+    }
+
+    fun approveAppExit(packageName: String) {
+        prefs.edit()
+            .putLong(
+                approvalKey(packageName),
+                System.currentTimeMillis() + getGraceSeconds(packageName) * 1000L
+            )
             .apply()
     }
 
     fun isAppApproved(packageName: String): Boolean {
-        val approvedAt = prefs.getLong(approvalKey(packageName), 0L)
-        if (approvedAt == 0L) return false
-        val elapsedSeconds = (System.currentTimeMillis() - approvedAt) / 1000L
-        if (elapsedSeconds >= getGraceSeconds(packageName)) {
+        val approvedUntil = prefs.getLong(approvalKey(packageName), 0L)
+        if (approvedUntil == 0L) return false
+        if (System.currentTimeMillis() >= approvedUntil) {
             prefs.edit().remove(approvalKey(packageName)).apply()
             return false
         }
@@ -95,6 +106,13 @@ class PreferencesManager private constructor(context: Context) {
         prefs.edit().putLong(sessionDeadlineKey(packageName), millis).apply()
     }
 
+    fun getSessionPausedAt(packageName: String): Long =
+        prefs.getLong(sessionPausedKey(packageName), 0L)
+
+    fun setSessionPausedAt(packageName: String, millis: Long) {
+        prefs.edit().putLong(sessionPausedKey(packageName), millis).apply()
+    }
+
     fun getSessionDurationMinutes(packageName: String): Int =
         prefs.getInt(sessionDurationKey(packageName), 0)
 
@@ -107,6 +125,7 @@ class PreferencesManager private constructor(context: Context) {
             .remove(sessionStateKey(packageName))
             .remove(sessionDeadlineKey(packageName))
             .remove(sessionDurationKey(packageName))
+            .remove(sessionPausedKey(packageName))
             .apply()
     }
 
@@ -130,6 +149,7 @@ class PreferencesManager private constructor(context: Context) {
     private fun sessionStateKey(packageName: String): String = "$KEY_SESSION_STATE_PREFIX$packageName"
     private fun sessionDeadlineKey(packageName: String): String = "$KEY_SESSION_DEADLINE_PREFIX$packageName"
     private fun sessionDurationKey(packageName: String): String = "$KEY_SESSION_DURATION_PREFIX$packageName"
+    private fun sessionPausedKey(packageName: String): String = "$KEY_SESSION_PAUSED_PREFIX$packageName"
     private fun penaltyKey(packageName: String): String = "$KEY_PENALTY_PREFIX$packageName"
 
     fun isSetupComplete(): Boolean =
@@ -144,15 +164,17 @@ class PreferencesManager private constructor(context: Context) {
         private const val KEY_MONITORED_PACKAGES = "monitored_packages"
         private const val KEY_TIMER_PREFIX = "timer_duration_"
         private const val KEY_GRACE_PREFIX = "grace_duration_"
-        private const val KEY_APPROVAL_PREFIX = "approved_at_"
+        private const val KEY_APPROVAL_PREFIX = "approved_until_"
         private const val KEY_SETUP_COMPLETE = "setup_complete"
         private const val KEY_SESSION_ENABLED_PREFIX = "session_enabled_"
         private const val KEY_SESSION_MAX_PREFIX = "session_max_"
         private const val KEY_SESSION_STATE_PREFIX = "session_state_"
         private const val KEY_SESSION_DEADLINE_PREFIX = "session_deadline_"
         private const val KEY_SESSION_DURATION_PREFIX = "session_duration_"
+        private const val KEY_SESSION_PAUSED_PREFIX = "session_paused_"
         private const val KEY_PENALTY_PREFIX = "intervention_penalty_"
 
+        const val ENTRY_APPROVAL_SECONDS = 5
         const val INTERVENTION_PENALTY_INCREMENT = 5
 
         const val DEFAULT_TIMER_SECONDS = 10

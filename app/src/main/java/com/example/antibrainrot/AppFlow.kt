@@ -9,7 +9,7 @@ internal fun launchTargetApp(context: Context, targetPackage: String?) {
         if (context is Activity) context.finishAndRemoveTask()
         return
     }
-    PreferencesManager.get(context).setAppApproved(targetPackage)
+    PreferencesManager.get(context).approveAppEntry(targetPackage)
     val launchIntent = context.packageManager.getLaunchIntentForPackage(targetPackage)
     if (launchIntent != null) {
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

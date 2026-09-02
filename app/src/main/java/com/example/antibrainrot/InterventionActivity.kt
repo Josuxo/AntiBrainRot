@@ -95,7 +95,7 @@ fun InterventionScreen(targetPackage: String?, durationSeconds: Int) {
                 countingDown = false
                 break
             }
-            delay(16)
+            delay(100)
         }
     }
 

@@ -1,3 +1,5 @@
+import com.android.build.api.variant.ApplicationVariant
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -32,6 +34,15 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val appVariant = variant as? ApplicationVariant ?: return@onVariants
+        appVariant.outputs.forEach { output ->
+            output.outputFileName.set("AntiBrainRot.apk")
+        }
     }
 }
 

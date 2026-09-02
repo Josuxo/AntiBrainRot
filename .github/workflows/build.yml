@@ -38,4 +38,4 @@ jobs:
           tag_name: latest-build
           name: Latest Build
           prerelease: true
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: app/build/outputs/apk/debug/AntiBrainRot.apk

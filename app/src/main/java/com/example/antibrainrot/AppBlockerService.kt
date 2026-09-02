@@ -25,11 +25,15 @@ class AppBlockerService : AccessibilityService() {
         packageManager.resolveActivity(intent, 0)?.activityInfo?.packageName
     }
 
+    private val trackableCache = HashMap<String, Boolean>()
+
     private fun shouldTrackForeground(packageName: String): Boolean {
-        if (packageManager.getLaunchIntentForPackage(packageName) != null) return true
-        if (packageName == homeLauncherPackage) return true
-        if (packageName == this.packageName) return true
-        return false
+        trackableCache[packageName]?.let { return it }
+        val result = packageManager.getLaunchIntentForPackage(packageName) != null ||
+            packageName == homeLauncherPackage ||
+            packageName == this.packageName
+        trackableCache[packageName] = result
+        return result
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -49,20 +53,33 @@ class AppBlockerService : AccessibilityService() {
         val packageName = event.packageName?.toString() ?: return
 
         val prevForeground = lastForegroundPackage
-        if (shouldTrackForeground(packageName)) {
+        val tracked = shouldTrackForeground(packageName)
+        if (tracked) {
             lastForegroundPackage = packageName
         }
 
         val monitored = prefs.getMonitoredPackages()
+
+        if (tracked && prevForeground != null && prevForeground in monitored && prevForeground != packageName) {
+            prefs.approveAppExit(prevForeground)
+            if (prefs.getSessionState(prevForeground) == SessionState.USING &&
+                prefs.getSessionPausedAt(prevForeground) == 0L
+            ) {
+                prefs.setSessionPausedAt(prevForeground, System.currentTimeMillis())
+            }
+        }
 
         if (monitored.contains(packageName)) {
 
             checkSessionDeadline()
             startSessionTimer()
 
-            if (prefs.getSessionState(packageName) == SessionState.USING ||
-                prefs.getSessionState(packageName) == SessionState.CONFIRM
-            ) {
+            val state = prefs.getSessionState(packageName)
+            if (state == SessionState.USING) {
+                handleSessionResume(packageName, prevForeground)
+                return
+            }
+            if (state == SessionState.CONFIRM) {
                 return
             }
 
@@ -73,6 +90,21 @@ class AppBlockerService : AccessibilityService() {
             if (prevForeground != packageName) {
                 launchIntervention(packageName)
             }
+        }
+    }
+
+    private fun handleSessionResume(packageName: String, prevForeground: String?) {
+        val pausedAt = prefs.getSessionPausedAt(packageName)
+        if (pausedAt == 0L) return
+        prefs.setSessionPausedAt(packageName, 0L)
+        val awayMillis = System.currentTimeMillis() - pausedAt
+        if (awayMillis < prefs.getGraceSeconds(packageName) * 1000L) {
+            val deadline = prefs.getSessionDeadline(packageName)
+            if (deadline > 0L) {
+                prefs.setSessionDeadline(packageName, deadline + awayMillis)
+            }
+        } else if (prevForeground != packageName) {
+            launchIntervention(packageName)
         }
     }
 
@@ -97,6 +129,7 @@ class AppBlockerService : AccessibilityService() {
         var next: Long? = null
         for (packageName in prefs.getMonitoredPackages()) {
             if (prefs.getSessionState(packageName) != SessionState.USING) continue
+            if (prefs.getSessionPausedAt(packageName) != 0L) continue
             val deadline = prefs.getSessionDeadline(packageName)
             if (deadline <= now) continue
             next = if (next == null) deadline else minOf(next, deadline)
@@ -110,6 +143,7 @@ class AppBlockerService : AccessibilityService() {
         val now = System.currentTimeMillis()
         for (packageName in monitored) {
             if (prefs.getSessionState(packageName) != SessionState.USING) continue
+            if (prefs.getSessionPausedAt(packageName) != 0L) continue
             val deadline = prefs.getSessionDeadline(packageName)
             if (deadline > 0 && now >= deadline) {
                 if (lastForegroundPackage == packageName) {
