@@ -130,6 +130,10 @@ private fun onContinueToIntervention(context: Context, targetPackage: String?) {
     }
     val prefs = PreferencesManager.get(context)
     prefs.clearSession(pkg)
+    if (!prefs.getInterventionEnabled(pkg)) {
+        launchDurationPicker(context, pkg)
+        return
+    }
     prefs.incrementInterventionPenalty(pkg)
     val timerSeconds = prefs.getTimerSeconds(pkg) + prefs.getInterventionPenaltySeconds(pkg)
     val intent = Intent(context, InterventionActivity::class.java).apply {

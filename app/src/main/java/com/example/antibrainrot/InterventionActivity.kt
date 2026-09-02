@@ -1,7 +1,6 @@
 package com.example.antibrainrot
 
 import android.content.Context
-import android.content.Intent
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -205,13 +204,7 @@ private fun onContinue(context: Context, targetPackage: String?) {
         return
     }
     if (PreferencesManager.get(context).getSessionEnabled(targetPackage)) {
-        PreferencesManager.get(context).clearSession(targetPackage)
-        val intent = Intent(context, DurationPickerActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
-            putExtra(DurationPickerActivity.EXTRA_TARGET_PACKAGE, targetPackage)
-        }
-        context.startActivity(intent)
-        if (context is android.app.Activity) context.finishAndRemoveTask()
+        launchDurationPicker(context, targetPackage)
     } else {
         launchTargetApp(context, targetPackage)
     }

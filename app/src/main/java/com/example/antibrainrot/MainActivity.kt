@@ -369,6 +369,9 @@ fun AppConfigScreen(
     var sessionEnabled by remember(packageName) {
         mutableStateOf(prefs.getSessionEnabled(packageName))
     }
+    var interventionEnabled by remember(packageName) {
+        mutableStateOf(prefs.getInterventionEnabled(packageName))
+    }
     var sessionMaxMinutes by remember(packageName) {
         mutableStateOf(prefs.getSessionMaxMinutes(packageName))
     }
@@ -495,6 +498,33 @@ fun AppConfigScreen(
                     onCheckedChange = { checked ->
                         sessionEnabled = checked
                         prefs.setSessionEnabled(packageName, checked)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Intervención activada", style = MaterialTheme.typography.titleLarge)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Si está activada, aparecerá la pantalla de respiración " +
+                            "(ES LA HORA DEL CELU) antes de abrir la aplicación. " +
+                            "Si la desactivas, la aplicación se abrirá directamente y " +
+                            "el temporizador seguirá funcionando cuando esté activo.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = interventionEnabled,
+                    onCheckedChange = { checked ->
+                        interventionEnabled = checked
+                        prefs.setInterventionEnabled(packageName, checked)
                     }
                 )
             }

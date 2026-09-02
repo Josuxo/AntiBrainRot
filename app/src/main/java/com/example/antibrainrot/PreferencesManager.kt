@@ -80,6 +80,13 @@ class PreferencesManager private constructor(context: Context) {
         prefs.edit().putBoolean(sessionEnabledKey(packageName), enabled).apply()
     }
 
+    fun getInterventionEnabled(packageName: String): Boolean =
+        prefs.getBoolean(interventionEnabledKey(packageName), true)
+
+    fun setInterventionEnabled(packageName: String, enabled: Boolean) {
+        prefs.edit().putBoolean(interventionEnabledKey(packageName), enabled).apply()
+    }
+
     fun getSessionMaxMinutes(packageName: String): Int {
         val max = prefs.getInt(sessionMaxKey(packageName), DEFAULT_SESSION_MAX_MINUTES)
         return SESSION_MAX_OPTIONS.firstOrNull { it == max } ?: DEFAULT_SESSION_MAX_MINUTES
@@ -145,6 +152,7 @@ class PreferencesManager private constructor(context: Context) {
     private fun graceKey(packageName: String): String = "$KEY_GRACE_PREFIX$packageName"
     private fun approvalKey(packageName: String): String = "$KEY_APPROVAL_PREFIX$packageName"
     private fun sessionEnabledKey(packageName: String): String = "$KEY_SESSION_ENABLED_PREFIX$packageName"
+    private fun interventionEnabledKey(packageName: String): String = "$KEY_INTERVENTION_ENABLED_PREFIX$packageName"
     private fun sessionMaxKey(packageName: String): String = "$KEY_SESSION_MAX_PREFIX$packageName"
     private fun sessionStateKey(packageName: String): String = "$KEY_SESSION_STATE_PREFIX$packageName"
     private fun sessionDeadlineKey(packageName: String): String = "$KEY_SESSION_DEADLINE_PREFIX$packageName"
@@ -167,6 +175,7 @@ class PreferencesManager private constructor(context: Context) {
         private const val KEY_APPROVAL_PREFIX = "approved_until_"
         private const val KEY_SETUP_COMPLETE = "setup_complete"
         private const val KEY_SESSION_ENABLED_PREFIX = "session_enabled_"
+        private const val KEY_INTERVENTION_ENABLED_PREFIX = "intervention_enabled_"
         private const val KEY_SESSION_MAX_PREFIX = "session_max_"
         private const val KEY_SESSION_STATE_PREFIX = "session_state_"
         private const val KEY_SESSION_DEADLINE_PREFIX = "session_deadline_"

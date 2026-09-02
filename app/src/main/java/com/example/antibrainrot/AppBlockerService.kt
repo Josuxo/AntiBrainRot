@@ -159,6 +159,14 @@ class AppBlockerService : AccessibilityService() {
     private fun launchIntervention(packageName: String) {
         prefs.clearSession(packageName)
         prefs.resetInterventionPenalty(packageName)
+
+        if (!prefs.getInterventionEnabled(packageName)) {
+            if (prefs.getSessionEnabled(packageName)) {
+                launchDurationPicker(this, packageName)
+            }
+            return
+        }
+
         val timerSeconds = prefs.getTimerSeconds(packageName)
         val intent = Intent(this, InterventionActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)

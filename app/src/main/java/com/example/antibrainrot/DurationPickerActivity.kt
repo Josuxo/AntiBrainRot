@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Vibrator
+import android.os.VibrationEffect
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -69,6 +71,13 @@ fun DurationPickerScreen(
 
     val maxMinutes = prefs.getSessionMaxMinutes(targetPackage ?: "")
     var minutes by remember { mutableIntStateOf(1) }
+    val vibrator = remember {
+        if (hasHapticEngine(context)) {
+            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        } else {
+            null
+        }
+    }
 
     Scaffold { innerPadding ->
         Column(
@@ -116,7 +125,15 @@ fun DurationPickerScreen(
 
             Slider(
                 value = minutes.toFloat(),
-                onValueChange = { minutes = it.toInt().coerceIn(1, maxMinutes) },
+                onValueChange = { newValue ->
+                    val snapped = newValue.toInt().coerceIn(1, maxMinutes)
+                    if (snapped != minutes) {
+                        minutes = snapped
+                        vibrator?.vibrate(
+                            VibrationEffect.createOneShot(8, VibrationEffect.DEFAULT_AMPLITUDE)
+                        )
+                    }
+                },
                 valueRange = 1f..maxMinutes.toFloat(),
                 steps = (maxMinutes - 2).coerceAtLeast(0)
             )
