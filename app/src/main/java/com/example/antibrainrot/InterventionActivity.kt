@@ -94,7 +94,7 @@ fun InterventionScreen(targetPackage: String?, durationSeconds: Int) {
                 countingDown = false
                 break
             }
-            delay(100)
+            delay(16)
         }
     }
 
@@ -181,7 +181,7 @@ fun BreathingCircle(progress: Float) {
             progress = { progress },
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { rotationZ = -90f },
+                .graphicsLayer { scaleX = -1f },
             strokeWidth = 8.dp,
             color = MaterialTheme.colorScheme.primary
         )

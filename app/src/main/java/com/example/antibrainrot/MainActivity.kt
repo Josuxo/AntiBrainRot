@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -95,6 +98,12 @@ fun AppRoot() {
     val startOnDashboard = setupDone.value && overlayEnabled.value && accessibilityEnabled.value
     val currentScreen = remember { mutableStateOf(if (startOnDashboard) "dashboard" else "setup") }
     val configPackage = remember { mutableStateOf<String?>(null) }
+
+    BackHandler(
+        enabled = currentScreen.value == "config" || currentScreen.value == "picker"
+    ) {
+        currentScreen.value = "dashboard"
+    }
 
     when (currentScreen.value) {
         "setup" -> SetupScreen(
@@ -391,9 +400,10 @@ fun AppConfigScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
@@ -417,33 +427,62 @@ fun AppConfigScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("Tiempo de espera antes de abrir la aplicación", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Cuánto tiempo esperar antes de poder abrir la aplicación.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "${timerSeconds.toInt()} segundos",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 12.dp)
-            )
-            Slider(
-                value = timerSeconds,
-                onValueChange = { timerSeconds = it },
-                onValueChangeFinished = {
-                    prefs.setTimerSeconds(
-                        packageName,
-                        timerSeconds.toInt().coerceIn(
-                            PreferencesManager.MIN_TIMER_SECONDS,
-                            PreferencesManager.MAX_TIMER_SECONDS
-                        )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Intervención activada", style = MaterialTheme.typography.titleLarge)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Si está activada, aparecerá la pantalla de respiración " +
+                            "(ES LA HORA DEL CELU) antes de abrir la aplicación. " +
+                            "Si la desactivas, la aplicación se abrirá directamente y " +
+                            "el temporizador seguirá funcionando cuando esté activo.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                valueRange = 1f..30f,
-                steps = 28
-            )
+                }
+                Switch(
+                    checked = interventionEnabled,
+                    onCheckedChange = { checked ->
+                        interventionEnabled = checked
+                        prefs.setInterventionEnabled(packageName, checked)
+                    }
+                )
+            }
+
+            if (interventionEnabled) {
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text("Tiempo de espera antes de abrir la aplicación", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Cuánto tiempo esperar antes de poder abrir la aplicación.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${timerSeconds.toInt()} segundos",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+                Slider(
+                    value = timerSeconds,
+                    onValueChange = { timerSeconds = it },
+                    onValueChangeFinished = {
+                        prefs.setTimerSeconds(
+                            packageName,
+                            timerSeconds.toInt().coerceIn(
+                                PreferencesManager.MIN_TIMER_SECONDS,
+                                PreferencesManager.MAX_TIMER_SECONDS
+                            )
+                        )
+                    },
+                    valueRange = 1f..30f,
+                    steps = 28
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -473,8 +512,8 @@ fun AppConfigScreen(
                         )
                     )
                 },
-                valueRange = 5f..120f,
-                steps = 22
+                valueRange = 1f..60f,
+                steps = 58
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -498,33 +537,6 @@ fun AppConfigScreen(
                     onCheckedChange = { checked ->
                         sessionEnabled = checked
                         prefs.setSessionEnabled(packageName, checked)
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Intervención activada", style = MaterialTheme.typography.titleLarge)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Si está activada, aparecerá la pantalla de respiración " +
-                            "(ES LA HORA DEL CELU) antes de abrir la aplicación. " +
-                            "Si la desactivas, la aplicación se abrirá directamente y " +
-                            "el temporizador seguirá funcionando cuando esté activo.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Switch(
-                    checked = interventionEnabled,
-                    onCheckedChange = { checked ->
-                        interventionEnabled = checked
-                        prefs.setInterventionEnabled(packageName, checked)
                     }
                 )
             }

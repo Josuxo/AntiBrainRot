@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.content.Intent.ACTION_MAIN
 import android.content.Intent.CATEGORY_HOME
+import android.util.LruCache
 import android.view.accessibility.AccessibilityEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,14 +26,14 @@ class AppBlockerService : AccessibilityService() {
         packageManager.resolveActivity(intent, 0)?.activityInfo?.packageName
     }
 
-    private val trackableCache = HashMap<String, Boolean>()
+    private val trackableCache = object : LruCache<String, Boolean>(200) {}
 
     private fun shouldTrackForeground(packageName: String): Boolean {
-        trackableCache[packageName]?.let { return it }
+        trackableCache.get(packageName)?.let { return it }
         val result = packageManager.getLaunchIntentForPackage(packageName) != null ||
             packageName == homeLauncherPackage ||
             packageName == this.packageName
-        trackableCache[packageName] = result
+        trackableCache.put(packageName, result)
         return result
     }
 
@@ -71,7 +72,7 @@ class AppBlockerService : AccessibilityService() {
 
         if (monitored.contains(packageName)) {
 
-            checkSessionDeadline()
+            checkAppDeadline(packageName)
             startSessionTimer()
 
             val state = prefs.getSessionState(packageName)
@@ -152,6 +153,21 @@ class AppBlockerService : AccessibilityService() {
                 } else {
                     prefs.clearSession(packageName)
                 }
+            }
+        }
+    }
+
+    private fun checkAppDeadline(packageName: String) {
+        if (!::prefs.isInitialized) return
+        if (prefs.getSessionState(packageName) != SessionState.USING) return
+        if (prefs.getSessionPausedAt(packageName) != 0L) return
+        val deadline = prefs.getSessionDeadline(packageName)
+        if (deadline > 0 && System.currentTimeMillis() >= deadline) {
+            if (lastForegroundPackage == packageName) {
+                prefs.setSessionState(packageName, SessionState.CONFIRM)
+                launchConfirm(packageName)
+            } else {
+                prefs.clearSession(packageName)
             }
         }
     }
